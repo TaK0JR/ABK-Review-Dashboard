@@ -1,0 +1,146 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-brand-dark: #2B2116;
+  }
+
+  html {
+    font-family: 'Poppins', sans-serif;
+  }
+  
+  body {
+    @apply bg-white;
+    color: var(--color-brand-dark);
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-medium;
+    color: var(--color-brand-dark);
+  }
+}
+
+@layer components {
+  .btn {
+    @apply px-6 py-3 rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2;
+  }
+  
+  .btn-primary {
+    @apply bg-primary-500 hover:bg-primary-600 focus:ring-primary-500;
+    color: var(--color-brand-dark);
+  }
+  
+  .btn-secondary {
+    @apply bg-gray-50 hover:bg-gray-100 focus:ring-gray-200;
+    color: var(--color-brand-dark);
+  }
+  
+  .btn-success {
+    @apply bg-green-500 text-white hover:bg-green-600 focus:ring-green-500;
+  }
+  
+  .btn-danger {
+    @apply bg-red-500 text-white hover:bg-red-600 focus:ring-red-500;
+  }
+
+  .btn-sm {
+    @apply px-4 py-2 text-sm;
+  }
+  
+  .card {
+    @apply bg-white rounded-lg p-6;
+    box-shadow: var(--tw-shadow-card);
+  }
+  
+  .form-input {
+    @apply w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+  }
+  
+  .form-label {
+    @apply block mb-2 text-sm font-medium;
+    color: var(--color-brand-dark);
+  }
+
+  .form-error {
+    @apply mt-1 text-sm text-red-600;
+  }
+  
+  .badge {
+    @apply px-3 py-1.5 text-sm font-medium rounded-full;
+  }
+  
+  .badge-blue {
+    @apply bg-blue-50 text-blue-700;
+  }
+  
+  .badge-green {
+    @apply bg-green-50 text-green-700;
+  }
+  
+  .badge-yellow {
+    @apply bg-primary-50;
+    color: var(--color-brand-dark);
+  }
+  
+  .badge-red {
+    @apply bg-red-50 text-red-700;
+  }
+  
+  .badge-gray {
+    @apply bg-gray-100;
+    color: var(--color-brand-dark);
+  }
+
+  /* Sidebar styles */
+  .sidebar-link {
+    @apply flex items-center gap-3 px-4 py-3 rounded-lg transition-colors duration-200;
+  }
+
+  .sidebar-link-active {
+    @apply bg-primary-50 font-medium;
+    color: var(--color-brand-dark);
+  }
+
+  .sidebar-link-inactive {
+    @apply text-gray-600 hover:bg-gray-50;
+  }
+
+  /* Table styles */
+  .table-header {
+    @apply px-6 py-4 text-left text-sm font-medium;
+    color: var(--color-brand-dark);
+  }
+
+  .table-cell {
+    @apply px-6 py-4 whitespace-nowrap text-sm;
+    color: var(--color-brand-dark);
+  }
+
+  /* Form group spacing */
+  .form-group {
+    @apply space-y-6;
+  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes slideInFromRight {
+  from { transform: translateX(20px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.animate-slideIn {
+  animation: slideInFromRight 0.3s ease-out;
+}
