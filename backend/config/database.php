@@ -7,6 +7,8 @@
 // Charger la configuration selon l'environnement
 if (file_exists(__DIR__ . '/config.prod.php')) {
     require_once __DIR__ . '/config.prod.php';
+} elseif (file_exists(__DIR__ . '/config.dev.php')) {
+    require_once __DIR__ . '/config.dev.php';
 } else {
     // Configuration de développement par défaut
     define('DB_HOST', 'localhost');
@@ -42,7 +44,13 @@ class Database {
         $this->conn = null;
 
         try {
-            $dsn = "mysql:host=" . $this->host . ";dbname=" . $this->db_name . ";charset=utf8mb4";
+            // Construire le DSN avec port si défini
+            $dsn = "mysql:host=" . $this->host;
+            if (defined('DB_PORT')) {
+                $dsn .= ";port=" . DB_PORT;
+            }
+            $dsn .= ";dbname=" . $this->db_name . ";charset=utf8mb4";
+            
             $this->conn = new PDO($dsn, $this->username, $this->password);
             
             // Configuration PDO

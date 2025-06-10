@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { createClient } from '@supabase/supabase-js';
 import { 
   LayoutDashboard, 
   FileEdit, 
@@ -17,33 +16,11 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
-
 const DashboardLayout: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const checkAdmin = async () => {
-      if (user?.email) {
-        const { data } = await supabase
-          .from('auth')
-          .select('is_admin')
-          .eq('email', user.email)
-          .maybeSingle();
-        
-        setIsAdmin(!!data?.is_admin);
-      }
-    };
-
-    checkAdmin();
-  }, [user]);
 
   const handleLogout = () => {
     logout();
@@ -68,154 +45,158 @@ const DashboardLayout: React.FC = () => {
     { name: 'Paramètres', path: '/settings', icon: <Settings size={20} /> },
   ];
 
-  const adminNavItems = isAdmin ? [
-    { name: 'Admin Dashboard', path: '/admin', icon: <Shield size={20} /> },
-    ...baseNavItems
-  ] : baseNavItems;
+  const adminNavItems = user?.is_admin ? [
+    { name: 'Administration', path: '/admin', icon: <Shield size={20} /> }
+  ] : [];
 
-  const activeNavClass = "flex items-center gap-3 px-4 py-3 bg-primary-50 text-primary-600 font-medium rounded-lg";
-  const inactiveNavClass = "flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors duration-200";
+  const navItems = [...baseNavItems, ...adminNavItems];
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Mobile top bar */}
-      <div className="lg:hidden flex items-center justify-between p-4 bg-white border-b border-gray-200">
-        <div className="flex items-center">
-          <button 
-            onClick={() => setMobileMenuOpen(true)}
-            className="p-2 rounded-md text-gray-600 hover:bg-gray-100"
-          >
-            <Menu size={24} />
-          </button>
-          <div className="ml-3 text-xl font-bold text-primary-600">ABK Review</div>
-        </div>
-        <div className="flex items-center gap-2">
-          <button className="p-2 rounded-md text-gray-600 hover:bg-gray-100 relative">
-            <Bell size={20} />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-          </button>
-          <div className="w-8 h-8 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center font-medium">
-            {user?.full_name?.[0] || '?'}
-          </div>
-        </div>
+    <div className="min-h-screen bg-gray-50">
+      {/* Mobile menu button */}
+      <div className="lg:hidden fixed top-4 left-4 z-50">
+        <button
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          className="p-2 rounded-md bg-white shadow-md"
+        >
+          {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
       </div>
-      
-      {/* Mobile sidebar overlay */}
-      {mobileMenuOpen && (
-        <div className="fixed inset-0 z-40 bg-black bg-opacity-50" onClick={closeMobileMenu}></div>
-      )}
-      
+
       {/* Mobile sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white transform ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out lg:hidden`}>
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <div className="text-xl font-bold text-primary-600">ABK Review</div>
-          <button 
-            onClick={closeMobileMenu}
-            className="p-2 rounded-md text-gray-600 hover:bg-gray-100"
+      <div className={`fixed inset-y-0 left-0 z-40 w-64 bg-white shadow-lg transform ${
+        mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+      } transition-transform duration-300 ease-in-out lg:hidden`}>
+        <div className="flex items-center justify-between h-16 px-6 bg-primary-600">
+          <span className="text-xl font-semibold text-white">ABK Review</span>
+        </div>
+        <nav className="mt-8 px-4">
+          {navItems.map((item) => (
+            <NavLink
+              key={item.name}
+              to={item.path}
+              onClick={closeMobileMenu}
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-4 py-3 rounded-lg mb-1 transition-colors ${
+                  isActive
+                    ? 'bg-primary-50 text-primary-600'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`
+              }
+            >
+              {item.icon}
+              <span className="font-medium">{item.name}</span>
+            </NavLink>
+          ))}
+        </nav>
+      </div>
+
+      {/* Desktop sidebar */}
+      <div className={`hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:w-64 lg:bg-white lg:shadow-lg lg:block ${
+        sidebarOpen ? 'lg:translate-x-0' : 'lg:-translate-x-full'
+      } transition-transform duration-300 ease-in-out`}>
+        <div className="flex items-center justify-between h-16 px-6 bg-primary-600">
+          <span className="text-xl font-semibold text-white">ABK Review</span>
+          <button
+            onClick={toggleSidebar}
+            className="p-1 rounded-md text-white hover:bg-primary-700"
           >
             <X size={20} />
           </button>
         </div>
-        <div className="overflow-y-auto h-full py-4">
-          <nav className="px-4 space-y-2">
-            {adminNavItems.map((item) => (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                className={({ isActive }) => isActive ? activeNavClass : inactiveNavClass}
-                onClick={closeMobileMenu}
-              >
-                {item.icon}
-                <span>{item.name}</span>
-              </NavLink>
-            ))}
-          </nav>
-          <div className="mt-auto px-4 py-4 border-t border-gray-200">
-            <button 
-              onClick={handleLogout}
-              className="flex items-center gap-3 px-4 py-3 w-full text-left text-gray-600 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+        <nav className="mt-8 px-4">
+          {navItems.map((item) => (
+            <NavLink
+              key={item.name}
+              to={item.path}
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-4 py-3 rounded-lg mb-1 transition-colors ${
+                  isActive
+                    ? 'bg-primary-50 text-primary-600'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`
+              }
             >
-              <LogOut size={20} />
-              <span>Déconnexion</span>
+              {item.icon}
+              <span className="font-medium">{item.name}</span>
+            </NavLink>
+          ))}
+        </nav>
+        
+        {/* User info at bottom */}
+        <div className="absolute bottom-0 left-0 right-0 p-4 border-t">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center">
+                <span className="text-primary-600 font-semibold">
+                  {user?.full_name?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                </span>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-700">
+                  {user?.full_name || 'Utilisateur'}
+                </p>
+                <p className="text-xs text-gray-500">{user?.email}</p>
+              </div>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="p-2 text-gray-500 hover:text-gray-700 rounded-md hover:bg-gray-100"
+              title="Déconnexion"
+            >
+              <LogOut size={18} />
             </button>
           </div>
         </div>
       </div>
-      
-      <div className="flex flex-1 overflow-hidden">
-        {/* Desktop sidebar */}
-        <aside 
-          className={`bg-white border-r border-gray-200 transition-all duration-300 hidden lg:block ${
-            sidebarOpen ? 'w-64' : 'w-20'
-          }`}
-        >
-          <div className={`p-4 flex ${sidebarOpen ? 'justify-between' : 'justify-center'} items-center border-b border-gray-200`}>
-            {sidebarOpen && <div className="text-xl font-bold text-primary-600">ABK Review</div>}
-            <button 
-              onClick={toggleSidebar}
-              className="p-2 rounded-md text-gray-600 hover:bg-gray-100"
-            >
-              <Menu size={20} />
-            </button>
-          </div>
-          <div className="p-4">
-            <nav className="space-y-2">
-              {adminNavItems.map((item) => (
-                <NavLink
-                  key={item.path}
-                  to={item.path}
-                  className={({ isActive }) => 
-                    isActive 
-                      ? `${activeNavClass} ${!sidebarOpen && 'justify-center px-2'}`
-                      : `${inactiveNavClass} ${!sidebarOpen && 'justify-center px-2'}`
-                  }
-                  title={!sidebarOpen ? item.name : undefined}
-                >
-                  {item.icon}
-                  {sidebarOpen && <span>{item.name}</span>}
-                </NavLink>
-              ))}
-            </nav>
-          </div>
-          <div className="mt-auto p-4 border-t border-gray-200">
-            <button 
-              onClick={handleLogout}
-              className={`flex ${!sidebarOpen && 'justify-center'} items-center gap-3 px-4 py-3 w-full text-left text-gray-600 hover:bg-gray-100 rounded-lg transition-colors duration-200`}
-              title={!sidebarOpen ? 'Déconnexion' : undefined}
-            >
-              <LogOut size={20} />
-              {sidebarOpen && <span>Déconnexion</span>}
-            </button>
-          </div>
-        </aside>
-        
-        {/* Main content */}
-        <main className="flex-1 overflow-auto">
-          <div className="hidden lg:flex items-center justify-between p-4 bg-white border-b border-gray-200">
-            <h1 className="text-xl font-semibold text-gray-800">
-              {/* Page title would be set by individual pages */}
-            </h1>
+
+      {/* Main content */}
+      <div className={`transition-all duration-300 ${
+        sidebarOpen ? 'lg:ml-64' : 'lg:ml-0'
+      }`}>
+        {/* Top bar */}
+        <div className="sticky top-0 z-20 bg-white shadow-sm">
+          <div className="flex items-center justify-between px-6 py-4">
             <div className="flex items-center gap-4">
-              <button className="p-2 rounded-md text-gray-600 hover:bg-gray-100 relative">
+              {!sidebarOpen && (
+                <button
+                  onClick={toggleSidebar}
+                  className="hidden lg:block p-2 rounded-md hover:bg-gray-100"
+                >
+                  <Menu size={20} />
+                </button>
+              )}
+              <h2 className="text-lg font-semibold text-gray-800">
+                {user?.company_name || 'ABK Review'}
+              </h2>
+            </div>
+            <div className="flex items-center gap-4">
+              <button className="p-2 rounded-md hover:bg-gray-100 relative">
                 <Bell size={20} />
                 <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
               </button>
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center font-medium">
-                  {user?.full_name?.[0] || '?'}
-                </div>
-                <div>
-                  <div className="font-medium text-sm">{user?.full_name}</div>
-                  <div className="text-xs text-gray-500">{user?.company_name}</div>
-                </div>
+              <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center">
+                <span className="text-primary-600 font-semibold">
+                  {user?.full_name?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                </span>
               </div>
             </div>
           </div>
-          <div className="p-6">
-            <Outlet />
-          </div>
-        </main>
+        </div>
+
+        {/* Page content */}
+        <div className="p-6">
+          <Outlet />
+        </div>
       </div>
+
+      {/* Mobile menu overlay */}
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black bg-opacity-50 lg:hidden"
+          onClick={closeMobileMenu}
+        ></div>
+      )}
     </div>
   );
 };

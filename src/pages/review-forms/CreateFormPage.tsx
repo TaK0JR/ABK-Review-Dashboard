@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { createClient } from '@supabase/supabase-js';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import api from '../../services/api';
 import { 
   Save, 
   PlusCircle, 
@@ -20,11 +20,6 @@ import {
   Copy
 } from 'lucide-react';
 import QRCode from 'qrcode.react';
-
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
 
 // Form question types
 type QuestionType = 'note' | 'smileys' | 'text';
@@ -72,6 +67,11 @@ const CreateFormPage: React.FC = () => {
   
   // Add a new question
   const addQuestion = () => {
+    if (form.questions.length >= 3) {
+      setError('Vous ne pouvez pas ajouter plus de 3 questions');
+      return;
+    }
+    
     const newQuestion: Question = {
       id: Date.now().toString(),
       text: 'Nouvelle question',
@@ -101,75 +101,35 @@ const CreateFormPage: React.FC = () => {
     });
   };
   
-  // Update form settings
-  const updateSettings = (key: string, value: string) => {
-    setForm({
-      ...form,
-      settings: {
-        ...form.settings,
-        [key]: value,
-      },
-    });
-  };
-  
-  // Handle form save
+  // Save form
   const handleSave = async () => {
-    if (!user?.email) {
-      setError('User not authenticated');
-      return;
-    }
-
-    if (!form.name || !form.questions.length || !form.settings) {
-      setError('Please fill in all required fields');
-      return;
-    }
-
-    setIsLoading(true);
     setError(null);
-
+    setIsLoading(true);
+    
     try {
-      // Create table name from user email
-      const tableName = `forms_${user.email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
-
-      // Clean up questions array to match DB schema
-      const cleanQuestions = form.questions.map(({ id, ...rest }) => ({
-        text: rest.text,
-        type: rest.type,
-        required: rest.required
-      }));
-
-      // Validate settings format
-      const settings = {
-        logoUrl: form.settings.logoUrl || 'https://example.com/default-logo.png',
-        bannerUrl: form.settings.bannerUrl || 'https://example.com/default-banner.jpg',
-        primaryColor: form.settings.primaryColor.match(/^#[0-9A-Fa-f]{6}$/) 
-          ? form.settings.primaryColor 
-          : '#3366FF',
-        backgroundColor: form.settings.backgroundColor.match(/^#[0-9A-Fa-f]{6}$/)
-          ? form.settings.backgroundColor
-          : '#F7F9FC',
-        redirectLowScore: form.settings.redirectLowScore || 'https://facebook.com/default',
-        redirectHighScore: form.settings.redirectHighScore || 'https://google.com/default'
-      };
-
-      const { error: saveError } = await supabase
-        .from(tableName)
-        .insert({
-          name: form.name,
-          description: form.description || null,
-          questions: cleanQuestions,
-          settings: settings
-        });
-
-      if (saveError) {
-        console.error('Database error:', saveError);
-        throw new Error(saveError.message);
+      if (!form.name) {
+        throw new Error('Le nom du formulaire est requis');
       }
-
-      navigate('/review-forms');
+      
+      if (form.questions.length === 0) {
+        throw new Error('Au moins une question est requise');
+      }
+      
+      const response = await api.post('/forms/create', {
+        name: form.name,
+        description: form.description,
+        questions: form.questions,
+        settings: form.settings
+      });
+      
+      if (response.success) {
+        navigate('/review-forms');
+      } else {
+        throw new Error(response.message || 'Erreur lors de la sauvegarde');
+      }
     } catch (err: any) {
       console.error('Error saving form:', err);
-      setError(err.message || 'Failed to save form');
+      setError(err.message || 'Erreur lors de la sauvegarde du formulaire');
     } finally {
       setIsLoading(false);
     }
@@ -280,7 +240,7 @@ const CreateFormPage: React.FC = () => {
                       : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
-                  Apparence
+                  Design
                 </button>
                 <button
                   onClick={() => setActiveTab('settings')}
@@ -292,199 +252,163 @@ const CreateFormPage: React.FC = () => {
                 >
                   Paramètres
                 </button>
-                <button
-                  onClick={() => setActiveTab('share')}
-                  className={`pb-4 px-1 text-sm font-medium ${
-                    activeTab === 'share'
-                      ? 'border-b-2 border-primary-500 text-primary-600'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  Partage
-                </button>
               </nav>
             </div>
             
             {/* Questions Tab */}
             {activeTab === 'questions' && (
-              <div>
-                <div className="space-y-6">
-                  {form.questions.map((question, index) => (
-                    <div 
-                      key={question.id} 
-                      className="border border-gray-200 rounded-lg p-4"
-                    >
-                      <div className="flex justify-between items-start mb-4">
-                        <div className="flex items-center gap-2">
-                          <button className="p-1 rounded hover:bg-gray-100">
-                            <MoveVertical size={16} />
-                          </button>
-                          <span className="text-sm font-medium text-gray-500">Question {index + 1}</span>
-                        </div>
-                        <button 
-                          onClick={() => removeQuestion(question.id)}
-                          className="p-1 rounded text-red-500 hover:bg-red-50"
-                          disabled={form.questions.length === 1}
-                        >
-                          <Trash2 size={16} />
-                        </button>
+              <div className="space-y-4">
+                {form.questions.map((question, index) => (
+                  <div key={question.id} className="border rounded-lg p-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <MoveVertical size={16} className="text-gray-400 cursor-grab" />
+                        <span className="text-sm font-medium text-gray-500">
+                          Question {index + 1}
+                        </span>
                       </div>
-                      
-                      <div className="mb-4">
-                        <label htmlFor={`question-${question.id}`} className="form-label">
-                          Texte de la question
-                        </label>
-                        <input
-                          id={`question-${question.id}`}
-                          type="text"
-                          className="form-input"
-                          value={question.text}
-                          onChange={(e) => updateQuestion(question.id, { text: e.target.value })}
-                        />
-                      </div>
-                      
-                      <div className="mb-4">
-                        <label className="form-label">Type de réponse</label>
-                        <div className="grid grid-cols-3 gap-2">
-                          <button
-                            onClick={() => updateQuestion(question.id, { type: 'note' })}
-                            className={`p-3 rounded-md flex flex-col items-center justify-center border ${
-                              question.type === 'note'
-                                ? 'border-primary-500 bg-primary-50 text-primary-600'
-                                : 'border-gray-200 hover:bg-gray-50'
-                            }`}
-                          >
-                            <Star size={24} className={question.type === 'note' ? 'text-primary-500' : 'text-gray-500'} />
-                            <span className="text-sm mt-2">Note (étoiles)</span>
-                          </button>
-                          
-                          <button
-                            onClick={() => updateQuestion(question.id, { type: 'smileys' })}
-                            className={`p-3 rounded-md flex flex-col items-center justify-center border ${
-                              question.type === 'smileys'
-                                ? 'border-primary-500 bg-primary-50 text-primary-600'
-                                : 'border-gray-200 hover:bg-gray-50'
-                            }`}
-                          >
-                            <Smile size={24} className={question.type === 'smileys' ? 'text-primary-500' : 'text-gray-500'} />
-                            <span className="text-sm mt-2">Smileys</span>
-                          </button>
-                          
-                          <button
-                            onClick={() => updateQuestion(question.id, { type: 'text' })}
-                            className={`p-3 rounded-md flex flex-col items-center justify-center border ${
-                              question.type === 'text'
-                                ? 'border-primary-500 bg-primary-50 text-primary-600'
-                                : 'border-gray-200 hover:bg-gray-50'
-                            }`}
-                          >
-                            <MessageSquare size={24} className={question.type === 'text' ? 'text-primary-500' : 'text-gray-500'} />
-                            <span className="text-sm mt-2">Texte libre</span>
-                          </button>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <label className="flex items-center">
-                          <input
-                            type="checkbox"
-                            className="rounded text-primary-600 focus:ring-primary-500"
-                            checked={question.required}
-                            onChange={(e) => updateQuestion(question.id, { required: e.target.checked })}
-                          />
-                          <span className="ml-2 text-sm text-gray-700">Réponse obligatoire</span>
-                        </label>
-                      </div>
+                      <button
+                        onClick={() => removeQuestion(question.id)}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        <Trash2 size={16} />
+                      </button>
                     </div>
-                  ))}
-                </div>
+                    
+                    <input
+                      type="text"
+                      className="form-input mb-3"
+                      value={question.text}
+                      onChange={(e) => updateQuestion(question.id, { text: e.target.value })}
+                      placeholder="Texte de la question"
+                    />
+                    
+                    <div className="flex items-center gap-4">
+                      <select
+                        className="form-select"
+                        value={question.type}
+                        onChange={(e) => updateQuestion(question.id, { type: e.target.value as QuestionType })}
+                      >
+                        <option value="note">Note (étoiles)</option>
+                        <option value="smileys">Smileys</option>
+                        <option value="text">Texte libre</option>
+                      </select>
+                      
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={question.required}
+                          onChange={(e) => updateQuestion(question.id, { required: e.target.checked })}
+                          className="rounded border-gray-300"
+                        />
+                        <span className="text-sm">Obligatoire</span>
+                      </label>
+                    </div>
+                  </div>
+                ))}
                 
-                <div className="mt-6">
-                  <button
-                    onClick={addQuestion}
-                    className="btn btn-secondary w-full flex items-center justify-center gap-2"
-                    disabled={form.questions.length >= 3}
-                  >
-                    <PlusCircle size={16} />
-                    Ajouter une question
-                  </button>
-                  {form.questions.length >= 3 && (
-                    <p className="text-xs text-gray-500 mt-2 text-center">
-                      Vous avez atteint le nombre maximum de questions (3).
-                    </p>
-                  )}
-                </div>
+                <button
+                  onClick={addQuestion}
+                  disabled={form.questions.length >= 3}
+                  className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-gray-400 hover:text-gray-700 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <PlusCircle size={20} />
+                  Ajouter une question
+                </button>
+                {form.questions.length >= 3 && (
+                  <p className="text-sm text-gray-500 text-center">Maximum 3 questions atteint</p>
+                )}
               </div>
             )}
             
             {/* Design Tab */}
             {activeTab === 'design' && (
-              <div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label htmlFor="logoUrl" className="form-label">Logo (URL)</label>
-                    <div className="flex">
-                      <input
-                        id="logoUrl"
-                        type="text"
-                        className="form-input"
-                        placeholder="https://votre-site.com/logo.png"
-                        value={form.settings.logoUrl}
-                        onChange={(e) => updateSettings('logoUrl', e.target.value)}
-                      />
-                    </div>
+              <div className="space-y-6">
+                <div>
+                  <label className="form-label flex items-center gap-2">
+                    <ImageIcon size={16} />
+                    Logo URL
+                  </label>
+                  <input
+                    type="url"
+                    className="form-input"
+                    placeholder="https://example.com/logo.png"
+                    value={form.settings.logoUrl}
+                    onChange={(e) => setForm({
+                      ...form,
+                      settings: { ...form.settings, logoUrl: e.target.value }
+                    })}
+                  />
+                </div>
+                
+                <div>
+                  <label className="form-label flex items-center gap-2">
+                    <ImageIcon size={16} />
+                    Bannière URL
+                  </label>
+                  <input
+                    type="url"
+                    className="form-input"
+                    placeholder="https://example.com/banner.jpg"
+                    value={form.settings.bannerUrl}
+                    onChange={(e) => setForm({
+                      ...form,
+                      settings: { ...form.settings, bannerUrl: e.target.value }
+                    })}
+                  />
+                </div>
+                
+                <div>
+                  <label className="form-label flex items-center gap-2">
+                    <Palette size={16} />
+                    Couleur principale
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="color"
+                      className="h-10 w-20"
+                      value={form.settings.primaryColor}
+                      onChange={(e) => setForm({
+                        ...form,
+                        settings: { ...form.settings, primaryColor: e.target.value }
+                      })}
+                    />
+                    <input
+                      type="text"
+                      className="form-input flex-1"
+                      value={form.settings.primaryColor}
+                      onChange={(e) => setForm({
+                        ...form,
+                        settings: { ...form.settings, primaryColor: e.target.value }
+                      })}
+                    />
                   </div>
-                  
-                  <div>
-                    <label htmlFor="bannerUrl" className="form-label">Image de bannière (URL)</label>
-                    <div className="flex">
-                      <input
-                        id="bannerUrl"
-                        type="text"
-                        className="form-input"
-                        placeholder="https://votre-site.com/banner.jpg"
-                        value={form.settings.bannerUrl}
-                        onChange={(e) => updateSettings('bannerUrl', e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="primaryColor" className="form-label">Couleur principale</label>
-                    <div className="flex">
-                      <input
-                        id="primaryColor"
-                        type="color"
-                        className="w-12 h-10 border border-gray-300 rounded-l-md"
-                        value={form.settings.primaryColor}
-                        onChange={(e) => updateSettings('primaryColor', e.target.value)}
-                      />
-                      <input
-                        type="text"
-                        className="form-input rounded-l-none"
-                        value={form.settings.primaryColor}
-                        onChange={(e) => updateSettings('primaryColor', e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="backgroundColor" className="form-label">Couleur de fond</label>
-                    <div className="flex">
-                      <input
-                        id="backgroundColor"
-                        type="color"
-                        className="w-12 h-10 border border-gray-300 rounded-l-md"
-                        value={form.settings.backgroundColor}
-                        onChange={(e) => updateSettings('backgroundColor', e.target.value)}
-                      />
-                      <input
-                        type="text"
-                        className="form-input rounded-l-none"
-                        value={form.settings.backgroundColor}
-                        onChange={(e) => updateSettings('backgroundColor', e.target.value)}
-                      />
-                    </div>
+                </div>
+                
+                <div>
+                  <label className="form-label flex items-center gap-2">
+                    <Palette size={16} />
+                    Couleur de fond
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="color"
+                      className="h-10 w-20"
+                      value={form.settings.backgroundColor}
+                      onChange={(e) => setForm({
+                        ...form,
+                        settings: { ...form.settings, backgroundColor: e.target.value }
+                      })}
+                    />
+                    <input
+                      type="text"
+                      className="form-input flex-1"
+                      value={form.settings.backgroundColor}
+                      onChange={(e) => setForm({
+                        ...form,
+                        settings: { ...form.settings, backgroundColor: e.target.value }
+                      })}
+                    />
                   </div>
                 </div>
               </div>
@@ -492,77 +416,39 @@ const CreateFormPage: React.FC = () => {
             
             {/* Settings Tab */}
             {activeTab === 'settings' && (
-              <div>
-                <div className="mb-6">
-                  <h3 className="text-md font-medium mb-3">Redirection selon la note</h3>
-                  <p className="text-sm text-gray-600 mb-4">
-                    Redirigez vos clients vers différentes pages selon leur note.
+              <div className="space-y-6">
+                <div>
+                  <label className="form-label">Redirection note faible (1-2 étoiles)</label>
+                  <input
+                    type="url"
+                    className="form-input"
+                    placeholder="https://facebook.com/votrepage"
+                    value={form.settings.redirectLowScore}
+                    onChange={(e) => setForm({
+                      ...form,
+                      settings: { ...form.settings, redirectLowScore: e.target.value }
+                    })}
+                  />
+                  <p className="text-sm text-gray-500 mt-1">
+                    Les clients mécontents seront redirigés vers cette URL
                   </p>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label htmlFor="redirectLowScore" className="form-label">
-                        Si note &lt; 4, rediriger vers :
-                      </label>
-                      <input
-                        id="redirectLowScore"
-                        type="text"
-                        className="form-input"
-                        placeholder="https://facebook.com/votre-page"
-                        value={form.settings.redirectLowScore}
-                        onChange={(e) => updateSettings('redirectLowScore', e.target.value)}
-                      />
-                      <p className="text-xs text-gray-500 mt-1">
-                        Ex: Vos réseaux sociaux pour amélioration
-                      </p>
-                    </div>
-                    
-                    <div>
-                      <label htmlFor="redirectHighScore" className="form-label">
-                        Si note ≥ 4, rediriger vers :
-                      </label>
-                      <input
-                        id="redirectHighScore"
-                        type="text"
-                        className="form-input"
-                        placeholder="https://g.page/r/votre-business"
-                        value={form.settings.redirectHighScore}
-                        onChange={(e) => updateSettings('redirectHighScore', e.target.value)}
-                      />
-                      <p className="text-xs text-gray-500 mt-1">
-                        Ex: Votre fiche Google Business
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            {/* Share Tab */}
-            {activeTab === 'share' && (
-              <div>
-                <div className="mb-6">
-                  <h3 className="text-md font-medium mb-3">Lien public</h3>
-                  <div className="bg-gray-50 p-4 rounded-md flex items-center justify-between">
-                    <span className="text-gray-600">{previewUrl}</span>
-                    <button 
-                      className="text-primary-600 hover:text-primary-700"
-                      onClick={() => navigator.clipboard.writeText(previewUrl)}
-                    >
-                      <Copy size={16} />
-                    </button>
-                  </div>
                 </div>
                 
-                <div className="mb-6">
-                  <h3 className="text-md font-medium mb-3">QR Code</h3>
-                  <div className="bg-white border border-gray-200 rounded-md p-6 flex flex-col items-center">
-                    <QRCode value={previewUrl} size={180} />
-                    <button className="mt-4 btn btn-secondary flex items-center gap-2">
-                      <QrCode size={16} />
-                      Télécharger le QR Code
-                    </button>
-                  </div>
+                <div>
+                  <label className="form-label">Redirection note élevée (4-5 étoiles)</label>
+                  <input
+                    type="url"
+                    className="form-input"
+                    placeholder="https://google.com/maps/votrepage"
+                    value={form.settings.redirectHighScore}
+                    onChange={(e) => setForm({
+                      ...form,
+                      settings: { ...form.settings, redirectHighScore: e.target.value }
+                    })}
+                  />
+                  <p className="text-sm text-gray-500 mt-1">
+                    Les clients satisfaits seront redirigés vers cette URL
+                  </p>
                 </div>
               </div>
             )}
@@ -570,121 +456,116 @@ const CreateFormPage: React.FC = () => {
         </div>
         
         {/* Preview Panel */}
-        <div>
-          <div className="card mb-4">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-medium">Aperçu</h2>
-              <div className="flex p-1 bg-gray-100 rounded-md">
+        <div className="lg:col-span-1">
+          <div className="card sticky top-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold">Aperçu</h3>
+              <div className="flex gap-2">
                 <button
                   onClick={() => setPreviewMode('mobile')}
-                  className={`p-1.5 rounded ${
-                    previewMode === 'mobile' 
-                      ? 'bg-white shadow-sm' 
-                      : 'text-gray-500'
-                  }`}
+                  className={`p-2 rounded ${previewMode === 'mobile' ? 'bg-gray-100' : ''}`}
                 >
                   <Smartphone size={16} />
                 </button>
                 <button
                   onClick={() => setPreviewMode('desktop')}
-                  className={`p-1.5 rounded ${
-                    previewMode === 'desktop' 
-                      ? 'bg-white shadow-sm' 
-                      : 'text-gray-500'
-                  }`}
+                  className={`p-2 rounded ${previewMode === 'desktop' ? 'bg-gray-100' : ''}`}
                 >
                   <Desktop size={16} />
                 </button>
               </div>
             </div>
             
-            <div className={`border border-gray-200 rounded-lg mx-auto overflow-hidden ${
-              previewMode === 'mobile' ? 'w-72' : 'w-full'
+            <div className={`border rounded-lg overflow-hidden ${
+              previewMode === 'mobile' ? 'max-w-sm mx-auto' : ''
             }`}>
-              <div 
-                className="p-4" 
-                style={{ backgroundColor: form.settings.backgroundColor }}
-              >
+              <div className="bg-white p-6" style={{ backgroundColor: form.settings.backgroundColor }}>
                 {form.settings.logoUrl && (
-                  <div className="flex justify-center mb-4">
-                    <img 
-                      src={form.settings.logoUrl} 
-                      alt="Logo" 
-                      className="h-12 object-contain"
-                    />
-                  </div>
+                  <img 
+                    src={form.settings.logoUrl} 
+                    alt="Logo"
+                    className="h-12 mx-auto mb-4 object-contain"
+                  />
                 )}
                 
-                {form.settings.bannerUrl && (
-                  <div className="mb-4 rounded-lg overflow-hidden">
-                    <img 
-                      src={form.settings.bannerUrl} 
-                      alt="Banner" 
-                      className="w-full h-32 object-cover"
-                    />
-                  </div>
+                <h2 className="text-xl font-semibold text-center mb-2">
+                  {form.name || 'Nom du formulaire'}
+                </h2>
+                
+                {form.description && (
+                  <p className="text-gray-600 text-center mb-6">
+                    {form.description}
+                  </p>
                 )}
                 
-                <div className="bg-white rounded-lg p-4 shadow-sm">
-                  {form.name && <h3 className="text-lg font-medium mb-2">{form.name}</h3>}
-                  {form.description && <p className="text-gray-600 text-sm mb-6">{form.description}</p>}
-                  
-                  <div className="space-y-6">
-                    {form.questions.map((question, index) => (
-                      <div key={question.id} className="border-b border-gray-100 pb-4 last:border-0 last:pb-0">
-                        <p className="text-sm font-medium mb-3">
-                          {question.text}
-                          {question.required && <span className="text-red-500 ml-1">*</span>}
-                        </p>
-                        
-                        {question.type === 'note' && (
-                          <div className="flex justify-center">
-                            <div className="flex space-x-2">
-                              {[1, 2, 3, 4, 5].map((star) => (
-                                <Star 
-                                  key={star} 
-                                  size={24} 
-                                  className="text-amber-400 cursor-pointer" 
-                                  fill={star <= 3 ? '#FBBF24' : 'none'}
-                                />
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        
-                        {question.type === 'smileys' && (
-                          <div className="flex justify-center space-x-4">
-                            <span className="text-2xl cursor-pointer">😞</span>
-                            <span className="text-2xl cursor-pointer">😐</span>
-                            <span className="text-2xl cursor-pointer">🙂</span>
-                            <span className="text-2xl cursor-pointer">😄</span>
-                          </div>
-                        )}
-                        
-                        {question.type === 'text' && (
-                          <textarea 
-                            className="form-input" 
-                            rows={3} 
-                            placeholder="Votre réponse..."
-                          ></textarea>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                  
-                  <div className="mt-6">
-                    <button 
-                      className="w-full py-2 rounded-md font-medium"
-                      style={{ 
-                        backgroundColor: form.settings.primaryColor, 
-                        color: 'white'
-                      }}
-                    >
-                      Envoyer
-                    </button>
-                  </div>
+                <div className="space-y-6">
+                  {form.questions.map((question, index) => (
+                    <div key={question.id}>
+                      <p className="mb-3 font-medium">
+                        {question.text}
+                        {question.required && <span className="text-red-500 ml-1">*</span>}
+                      </p>
+                      
+                      {question.type === 'note' && (
+                        <div className="flex justify-center gap-2">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                              key={star}
+                              size={24}
+                              className="cursor-pointer text-gray-300 hover:text-yellow-400"
+                            />
+                          ))}
+                        </div>
+                      )}
+                      
+                      {question.type === 'smileys' && (
+                        <div className="flex justify-center space-x-4">
+                          <span className="text-2xl cursor-pointer">😞</span>
+                          <span className="text-2xl cursor-pointer">😐</span>
+                          <span className="text-2xl cursor-pointer">🙂</span>
+                          <span className="text-2xl cursor-pointer">😄</span>
+                        </div>
+                      )}
+                      
+                      {question.type === 'text' && (
+                        <textarea 
+                          className="form-input" 
+                          rows={3} 
+                          placeholder="Votre réponse..."
+                          disabled
+                        />
+                      )}
+                    </div>
+                  ))}
                 </div>
+                
+                <button 
+                  className="w-full mt-6 py-2 rounded-md font-medium text-white"
+                  style={{ backgroundColor: form.settings.primaryColor }}
+                  disabled
+                >
+                  Envoyer
+                </button>
               </div>
+            </div>
+            
+            <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+              <p className="text-sm text-gray-600 mb-2">URL du formulaire :</p>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  readOnly
+                  value={previewUrl}
+                  className="form-input text-sm flex-1"
+                />
+                <button className="p-2 text-primary-600 hover:text-primary-700">
+                  <Copy size={16} />
+                </button>
+              </div>
+            </div>
+            
+            <div className="mt-4 flex justify-center">
+              <QRCode value={`https://${previewUrl}`} size={150} />
             </div>
           </div>
         </div>
@@ -694,5 +575,3 @@ const CreateFormPage: React.FC = () => {
 };
 
 export default CreateFormPage;
-
-export default CreateFormPage
