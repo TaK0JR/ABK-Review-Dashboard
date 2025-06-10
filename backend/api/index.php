@@ -4,7 +4,10 @@
  * Redirige vers la documentation ou retourne les infos de base
  */
 
-require_once '../includes/cors.php';
+require_once __DIR__ . '/../config/database.php';
+
+// ENSUITE charger CORS
+require_once __DIR__ . '/../includes/cors.php';
 
 // Informations de l'API
 $apiInfo = [

@@ -4,16 +4,18 @@
  * POST /api/auth/login
  */
 
-require_once '../../config/database.php';
-require_once '../../includes/cors.php';
-require_once '../../includes/auth.php';
+// IMPORTANT : Charger d'abord la config, puis CORS
+require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../../includes/cors.php';
+require_once __DIR__ . '/../../includes/auth.php';
 
-// Vérifier la méthode
+// Vérifier la méthode APRÈS avoir géré CORS
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode(['success' => false, 'message' => 'Méthode non autorisée']);
     exit();
 }
+
 
 // Récupérer les données JSON
 $data = json_decode(file_get_contents('php://input'), true);

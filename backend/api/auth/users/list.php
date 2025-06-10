@@ -4,9 +4,9 @@
  * GET /api/users/list
  */
 
-require_once '../../config/database.php';
-require_once '../../includes/cors.php';
-require_once '../../includes/auth.php';
+require_once __DIR__ . '/../../../config/database.php';
+require_once __DIR__ . '/../../../includes/cors.php';
+require_once __DIR__ . '/../../../includes/auth.php';
 
 // Vérifier la méthode
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
