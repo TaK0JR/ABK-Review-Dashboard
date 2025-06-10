@@ -1,0 +1,62 @@
+# Configuration Apache pour l'API ABK Review
+# Active la réécriture d'URL
+RewriteEngine On
+
+# Redirection HTTPS (décommenter en production)
+# RewriteCond %{HTTPS} off
+# RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Gestion des requêtes OPTIONS (CORS preflight)
+RewriteCond %{REQUEST_METHOD} OPTIONS
+RewriteRule ^(.*)$ $1 [R=200,L]
+
+# Redirection des URLs vers les fichiers PHP
+# Auth endpoints
+RewriteRule ^api/auth/login$ api/auth/login.php [L]
+RewriteRule ^api/auth/register$ api/auth/register.php [L]
+
+# Users endpoints
+RewriteRule ^api/users/list$ api/users/list.php [L]
+RewriteRule ^api/users/create$ api/users/create.php [L]
+
+# Forms endpoints
+RewriteRule ^api/forms/list$ api/forms/list.php [L]
+RewriteRule ^api/forms/create$ api/forms/create.php [L]
+
+# Protection des dossiers sensibles
+<FilesMatch "\.(env|json|lock|md)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Protection du dossier config
+<Directory "config">
+    Order allow,deny
+    Deny from all
+</Directory>
+
+# Protection du dossier includes
+<Directory "includes">
+    Order allow,deny
+    Deny from all
+</Directory>
+
+# Désactiver l'affichage des index de répertoires
+Options -Indexes
+
+# Définir le charset par défaut
+AddDefaultCharset UTF-8
+
+# Compression GZIP (améliore les performances)
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/plain
+    AddOutputFilterByType DEFLATE text/html
+    AddOutputFilterByType DEFLATE text/xml
+    AddOutputFilterByType DEFLATE text/css
+    AddOutputFilterByType DEFLATE application/xml
+    AddOutputFilterByType DEFLATE application/xhtml+xml
+    AddOutputFilterByType DEFLATE application/rss+xml
+    AddOutputFilterByType DEFLATE application/javascript
+    AddOutputFilterByType DEFLATE application/x-javascript
+    AddOutputFilterByType DEFLATE application/json
+</IfModule>
