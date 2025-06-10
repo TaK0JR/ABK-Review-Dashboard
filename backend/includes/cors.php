@@ -6,10 +6,11 @@
 
 // Domaines autorisés
 $allowed_origins = [
-    'http://localhost:5173', // Vite dev server
-    'http://localhost:3000', // Alternative
-    'http://localhost',      // Production local
-    'https://abk-review.com' // Production (à adapter)
+    'http://localhost:5173',  // Vite dev server
+    'http://localhost:3000',  // Alternative dev
+    'http://localhost',       // Local
+    'https://dashboard.abk-review.com', // Production
+    'https://www.dashboard.abk-review.com' // WWW production
 ];
 
 // Récupérer l'origine de la requête
@@ -21,6 +22,10 @@ if (in_array($origin, $allowed_origins)) {
 } else if (ENVIRONMENT === 'development') {
     // En développement, autoriser toutes les origines
     header("Access-Control-Allow-Origin: *");
+} else {
+    // En production, rejeter les origines non autorisées
+    http_response_code(403);
+    exit('Origine non autorisée');
 }
 
 // Headers CORS

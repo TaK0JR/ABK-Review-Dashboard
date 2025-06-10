@@ -4,12 +4,36 @@
  * ABK Review Application
  */
 
+// Charger la configuration selon l'environnement
+if (file_exists(__DIR__ . '/config.prod.php')) {
+    require_once __DIR__ . '/config.prod.php';
+} else {
+    // Configuration de développement par défaut
+    define('DB_HOST', 'localhost');
+    define('DB_NAME', 'abk_review');
+    define('DB_USER', 'root');
+    define('DB_PASS', '');
+    define('JWT_SECRET', 'votre_cle_secrete_a_changer_en_production');
+    define('JWT_EXPIRATION', 3600 * 24);
+    define('APP_URL', 'http://localhost');
+    define('API_URL', APP_URL . '/backend/api');
+    define('ENVIRONMENT', 'development');
+    date_default_timezone_set('Europe/Paris');
+}
+
 class Database {
-    private $host = "localhost";
-    private $db_name = "abk_review";
-    private $username = "root"; // À modifier selon votre configuration
-    private $password = ""; // À modifier selon votre configuration
+    private $host;
+    private $db_name;
+    private $username;
+    private $password;
     private $conn;
+
+    public function __construct() {
+        $this->host = DB_HOST;
+        $this->db_name = DB_NAME;
+        $this->username = DB_USER;
+        $this->password = DB_PASS;
+    }
 
     /**
      * Obtenir la connexion à la base de données
@@ -42,15 +66,6 @@ class Database {
     }
 }
 
-// Configuration globale
-define('JWT_SECRET', 'votre_cle_secrete_a_changer_en_production'); // À changer !
-define('JWT_EXPIRATION', 3600 * 24); // 24 heures
-define('APP_URL', 'http://localhost'); // À adapter selon votre environnement
-define('API_URL', APP_URL . '/backend/api');
-
-// Configuration d'environnement
-define('ENVIRONMENT', 'development'); // 'development' ou 'production'
-
 // Affichage des erreurs selon l'environnement
 if (ENVIRONMENT === 'development') {
     error_reporting(E_ALL);
@@ -58,7 +73,6 @@ if (ENVIRONMENT === 'development') {
 } else {
     error_reporting(0);
     ini_set('display_errors', 0);
+    ini_set('log_errors', 1);
+    ini_set('error_log', __DIR__ . '/../logs/errors.log');
 }
-
-// Timezone
-date_default_timezone_set('Europe/Paris');
