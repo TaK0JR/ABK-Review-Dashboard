@@ -18,14 +18,14 @@ $routes = [
     '/api/' => '/api/index.php',
     '/api/auth/login' => '/api/auth/login.php',
     '/api/auth/logout' => '/api/auth/logout.php',
-    '/api/auth/forms/list' => '/api/auth/forms/list.php',
-    '/api/auth/forms/create' => '/api/auth/forms/create.php',
-    '/api/auth/forms/update' => '/api/auth/forms/update.php',
-    '/api/auth/forms/delete' => '/api/auth/forms/delete.php',
-    '/api/auth/users/list' => '/api/auth/users/list.php',
-    '/api/auth/users/create' => '/api/auth/users/create.php',
-    '/api/auth/users/update' => '/api/auth/users/update.php',
-    '/api/auth/users/delete' => '/api/auth/users/delete.php',
+    '/api/forms/list' => '/api/auth/forms/list.php',
+    '/api/forms/create' => '/api/auth/forms/create.php',
+    '/api/forms/update' => '/api/auth/forms/update.php',
+    '/api/forms/delete' => '/api/auth/forms/delete.php',
+    '/api/users/list' => '/api/auth/users/list.php',
+    '/api/users/create' => '/api/auth/users/create.php',
+    '/api/users/update' => '/api/auth/users/update.php',
+    '/api/users/delete' => '/api/auth/users/delete.php',
 ];
 
 // Trouver la route correspondante

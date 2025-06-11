@@ -3,11 +3,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { 
   User, 
   Building, 
-  Mail, 
-  Phone, 
   CreditCard, 
   Shield, 
-  Bell, 
   Save,
   Calendar,
   CheckCircle,
@@ -79,17 +76,7 @@ const SettingsPage: React.FC = () => {
                 Sécurité
               </button>
               
-              <button
-                onClick={() => setActiveTab('notifications')}
-                className={`flex items-center px-3 py-2 rounded-md ${
-                  activeTab === 'notifications' 
-                    ? 'bg-primary-50 text-primary-600'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <Bell size={18} className="mr-3" />
-                Notifications
-              </button>
+              
               
               <button
                 onClick={() => setActiveTab('billing')}
@@ -120,7 +107,7 @@ const SettingsPage: React.FC = () => {
                     id="firstName"
                     type="text"
                     className="form-input"
-                    defaultValue={user?.name.split(' ')[0]}
+                    defaultValue={user?.full_name?.split(' ')[0] || ''}
                   />
                 </div>
                 
@@ -130,7 +117,7 @@ const SettingsPage: React.FC = () => {
                     id="lastName"
                     type="text"
                     className="form-input"
-                    defaultValue={user?.name.split(' ')[1] || ''}
+                    defaultValue={user?.full_name?.split(' ')[1] || ''}
                   />
                 </div>
                 
@@ -150,6 +137,7 @@ const SettingsPage: React.FC = () => {
                     id="phone"
                     type="tel"
                     className="form-input"
+                    defaultValue={user?.phone || ''}
                     placeholder="Ex: 0612345678"
                   />
                 </div>
@@ -176,7 +164,7 @@ const SettingsPage: React.FC = () => {
                     id="companyName"
                     type="text"
                     className="form-input"
-                    defaultValue={user?.company}
+                    defaultValue={user?.company_name || ''}
                   />
                 </div>
                 
@@ -200,15 +188,6 @@ const SettingsPage: React.FC = () => {
                   />
                 </div>
                 
-                <div>
-                  <label htmlFor="siret" className="form-label">Numéro SIRET</label>
-                  <input
-                    id="siret"
-                    type="text"
-                    className="form-input"
-                    placeholder="Ex: 12345678901234"
-                  />
-                </div>
                 
                 <div className="md:col-span-2">
                   <label htmlFor="address" className="form-label">Adresse</label>
@@ -304,112 +283,6 @@ const SettingsPage: React.FC = () => {
                 
                 <button className="btn btn-secondary text-red-600 hover:text-red-700 hover:bg-red-50">
                   Déconnecter toutes les autres sessions
-                </button>
-              </div>
-            </div>
-          )}
-          
-          {/* Notification Settings */}
-          {activeTab === 'notifications' && (
-            <div className="card">
-              <h2 className="text-lg font-medium mb-6">Préférences de notifications</h2>
-              
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-md font-medium mb-3">Notifications par email</h3>
-                  
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="font-medium">Nouvel avis reçu</div>
-                        <div className="text-sm text-gray-500">
-                          Recevoir un email quand un client laisse un avis
-                        </div>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" checked className="sr-only peer" />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
-                      </label>
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="font-medium">Rapport hebdomadaire</div>
-                        <div className="text-sm text-gray-500">
-                          Recevoir un résumé des performances chaque semaine
-                        </div>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" checked className="sr-only peer" />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
-                      </label>
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="font-medium">Alertes de campagnes</div>
-                        <div className="text-sm text-gray-500">
-                          Notifications concernant vos campagnes programmées
-                        </div>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" checked className="sr-only peer" />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="pt-6 border-t border-gray-200">
-                  <h3 className="text-md font-medium mb-3">Notifications dans l'application</h3>
-                  
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="font-medium">Nouveaux avis</div>
-                        <div className="text-sm text-gray-500">
-                          Afficher une notification pour chaque nouvel avis
-                        </div>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" checked className="sr-only peer" />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
-                      </label>
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="font-medium">Statistiques importantes</div>
-                        <div className="text-sm text-gray-500">
-                          Alertes sur les changements significatifs dans vos statistiques
-                        </div>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" className="sr-only peer" />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
-                      </label>
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="font-medium">Mises à jour système</div>
-                        <div className="text-sm text-gray-500">
-                          Notifications concernant les mises à jour de l'application
-                        </div>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" checked className="sr-only peer" />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="mt-6 pt-6 border-t border-gray-200 flex justify-end">
-                <button className="btn btn-primary flex items-center gap-2">
-                  <Save size={16} />
-                  Enregistrer les préférences
                 </button>
               </div>
             </div>

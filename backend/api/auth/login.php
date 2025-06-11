@@ -65,6 +65,7 @@ try {
             'email' => 'demo@abk-review.com',
             'full_name' => 'Compte Démo',
             'company_name' => 'ABK Review',
+            'phone' => '+33612345678', 
             'is_admin' => false
         ];
         
@@ -80,9 +81,9 @@ try {
     }
     
     // Rechercher l'utilisateur
-    $query = "SELECT id, email, password, full_name, company_name, is_admin 
-              FROM users 
-              WHERE email = :email";
+    $query = "SELECT id, email, password, full_name, company_name, phone, is_admin 
+          FROM users 
+          WHERE email = :email";
     
     $stmt = $conn->prepare($query);
     $stmt->bindParam(':email', $email);
