@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Configuration de la base de données MySQL
  * ABK Review Application
@@ -23,14 +24,16 @@ if (file_exists(__DIR__ . '/config.prod.php')) {
     date_default_timezone_set('Europe/Paris');
 }
 
-class Database {
+class Database
+{
     private $host;
     private $db_name;
     private $username;
     private $password;
     private $conn;
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->host = DB_HOST;
         $this->db_name = DB_NAME;
         $this->username = DB_USER;
@@ -40,25 +43,25 @@ class Database {
     /**
      * Obtenir la connexion à la base de données
      */
-    public function getConnection() {
+    public function getConnection()
+    {
         $this->conn = null;
 
         try {
-            // Construire le DSN avec port si défini
-            $dsn = "mysql:host=" . $this->host;
+            // Construire le DSN avec le port si défini
+            $dsn = "mysql:host=" . DB_HOST;
             if (defined('DB_PORT')) {
                 $dsn .= ";port=" . DB_PORT;
             }
-            $dsn .= ";dbname=" . $this->db_name . ";charset=utf8mb4";
-            
+            $dsn .= ";dbname=" . DB_NAME . ";charset=utf8mb4";
+
             $this->conn = new PDO($dsn, $this->username, $this->password);
-            
+
             // Configuration PDO
             $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $this->conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
             $this->conn->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
-            
-        } catch(PDOException $exception) {
+        } catch (PDOException $exception) {
             error_log("Erreur de connexion : " . $exception->getMessage());
             throw new Exception("Erreur de connexion à la base de données");
         }
@@ -69,7 +72,8 @@ class Database {
     /**
      * Fermer la connexion
      */
-    public function closeConnection() {
+    public function closeConnection()
+    {
         $this->conn = null;
     }
 }

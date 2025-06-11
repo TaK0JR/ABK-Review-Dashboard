@@ -1,10 +1,10 @@
 <?php
-// Configuration de développement avec base de production via tunnel SSH
-define('DB_HOST', '127.0.0.1');
-define('DB_PORT', '3307');  // Port du tunnel SSH
-define('DB_NAME', 'dash-abk-review');
-define('DB_USER', 'dash-abk-review');
-define('DB_PASS', 'cyzBR8HiuNDR2d4PAxO9!');
+// Configuration de développement avec Laragon
+define('DB_HOST', 'localhost');
+define('DB_PORT', '3306'); // Port par défaut de MySQL dans Laragon
+define('DB_NAME', 'abk_review_local');
+define('DB_USER', 'root');
+define('DB_PASS', ''); // Pas de mot de passe par défaut dans Laragon
 
 // JWT et sécurité (dev)
 define('JWT_SECRET', 'dev_secret_key_2024_abk_review_local');

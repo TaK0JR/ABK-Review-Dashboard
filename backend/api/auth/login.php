@@ -3,11 +3,20 @@
  * API Endpoint - Login
  * POST /api/auth/login
  */
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('log_errors', 1);
+ini_set('error_log', __DIR__ . '/../../error.log');
+
 
 // IMPORTANT : Charger d'abord la config, puis CORS
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/cors.php';
 require_once __DIR__ . '/../../includes/auth.php';
+
+
+error_log("Login.php - Includes chargés");
+
 
 // Vérifier la méthode APRÈS avoir géré CORS
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
