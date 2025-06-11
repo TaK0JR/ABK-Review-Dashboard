@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Link as LinkIcon, 
   Globe, 
   CheckCircle, 
   XCircle, 
@@ -8,15 +7,11 @@ import {
   Plus,
   Star,
   ThumbsUp,
-  MessageSquare,
-  ExternalLink,
   RefreshCw,
-  Users,
   Calendar,
   Shield,
   Loader2
 } from 'lucide-react';
-import { toast } from 'react-toastify';
 
 // Types pour les connexions de plateforme
 interface PlatformConnection {
@@ -71,22 +66,6 @@ const PLATFORMS: Record<string, PlatformConfig> = {
     color: 'pink',
     oauth_url: '/api/oauth/instagram',
     scopes: ['instagram_basic', 'instagram_manage_insights']
-  },
-  twitter: {
-    id: 'twitter',
-    name: 'Twitter / X',
-    icon: <Globe className="h-6 w-6 text-black" />,
-    color: 'black',
-    oauth_url: '/api/oauth/twitter',
-    scopes: ['tweet.read', 'users.read']
-  },
-  linkedin: {
-    id: 'linkedin',
-    name: 'LinkedIn',
-    icon: <Globe className="h-6 w-6 text-blue-700" />,
-    color: 'blue',
-    oauth_url: '/api/oauth/linkedin',
-    scopes: ['r_organization_social', 'rw_organization_admin']
   }
 };
 
@@ -96,6 +75,16 @@ const ConnectionsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState<number | null>(null);
   const [connecting, setConnecting] = useState<string | null>(null);
+  const [notification, setNotification] = useState<{
+    type: 'success' | 'error';
+    message: string;
+  } | null>(null);
+
+  // Fonction pour afficher une notification
+  const showNotification = (type: 'success' | 'error', message: string) => {
+    setNotification({ type, message });
+    setTimeout(() => setNotification(null), 5000); // Masquer après 5 secondes
+  };
 
   // Charger les connexions depuis l'API
   useEffect(() => {
@@ -111,7 +100,7 @@ const ConnectionsPage: React.FC = () => {
       setConnections(data);
     } catch (error) {
       console.error('Erreur:', error);
-      toast.error('Impossible de charger les connexions');
+      showNotification('error', 'Impossible de charger les connexions');
     } finally {
       setLoading(false);
     }
@@ -144,7 +133,7 @@ const ConnectionsPage: React.FC = () => {
       window.location.href = platform.oauth_url;
     } catch (error) {
       console.error('Erreur de connexion:', error);
-      toast.error('Erreur lors de la connexion');
+      showNotification('error', 'Erreur lors de la connexion');
       setConnecting(null);
     }
   };
@@ -160,14 +149,14 @@ const ConnectionsPage: React.FC = () => {
       
       if (!response.ok) throw new Error('Erreur de synchronisation');
       
-      const result = await response.json();
-      toast.success('Synchronisation réussie');
+      await response.json();
+      showNotification('success', 'Synchronisation réussie');
       
       // Recharger les connexions
       await fetchConnections();
     } catch (error) {
       console.error('Erreur de synchronisation:', error);
-      toast.error('Erreur lors de la synchronisation');
+      showNotification('error', 'Erreur lors de la synchronisation');
     } finally {
       setSyncing(null);
     }
@@ -184,11 +173,11 @@ const ConnectionsPage: React.FC = () => {
       
       if (!response.ok) throw new Error('Erreur de déconnexion');
       
-      toast.success('Service déconnecté');
+      showNotification('success', 'Service déconnecté');
       await fetchConnections();
     } catch (error) {
       console.error('Erreur de déconnexion:', error);
-      toast.error('Erreur lors de la déconnexion');
+      showNotification('error', 'Erreur lors de la déconnexion');
     }
   };
 
@@ -201,11 +190,11 @@ const ConnectionsPage: React.FC = () => {
       
       if (!response.ok) throw new Error('Erreur de rafraîchissement');
       
-      toast.success('Token renouvelé avec succès');
+      showNotification('success', 'Token renouvelé avec succès');
       await fetchConnections();
     } catch (error) {
       console.error('Erreur de rafraîchissement:', error);
-      toast.error('Erreur lors du renouvellement du token');
+      showNotification('error', 'Erreur lors du renouvellement du token');
     }
   };
 
@@ -225,9 +214,6 @@ const ConnectionsPage: React.FC = () => {
   const availablePlatforms = Object.values(PLATFORMS).filter(
     platform => !connections.some(conn => conn.platform === platform.id)
   );
-
-  // Filtrer les connexions selon l'onglet
-  const displayedItems = activeTab === 'connected' ? connections : availablePlatforms;
 
   if (loading) {
     return (

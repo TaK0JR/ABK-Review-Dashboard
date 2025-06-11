@@ -25,3 +25,4 @@ dist-ssr
 .env
 backend/config/config.prod.php
 backend/logs/
+.env.example

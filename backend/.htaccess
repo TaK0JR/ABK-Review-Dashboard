@@ -1,5 +1,9 @@
 # Configuration Apache pour React Router
 # Placez ce fichier dans public_html/
+<FilesMatch "^\.env">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
 
 <IfModule mod_rewrite.c>
   RewriteEngine On
@@ -47,3 +51,6 @@
   ExpiresByType text/css "access plus 1 month"
   ExpiresByType application/javascript "access plus 1 month"
 </IfModule>
+
+RewriteEngine On
+RewriteRule ^api/platform-connections(.*)$ /api/platform-connections.php$1 [L,QSA]
